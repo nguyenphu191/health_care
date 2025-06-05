@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Lịch làm việc{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-clock"></i> Lịch làm việc</h2>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                    <i class="fas fa-plus"></i> Thêm lịch làm việc
+                </button>
+                <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-week"></i> Lịch làm việc trong tuần</h5>
+            </div>
+            <div class="card-body">
+                {% if schedules %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Thứ</th>
+                                    <th>Giờ bắt đầu</th>
+                                    <th>Giờ kết thúc</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in schedules %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ schedule.get_weekday_display }}</strong>
+                                    </td>
+                                    <td>{{ schedule.start_time|time:"H:i" }}</td>
+                                    <td>{{ schedule.end_time|time:"H:i" }}</td>
+                                    <td>
+                                        {% if schedule.is_available %}
+                                            <span class="badge bg-success">Có sẵn</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Không có sẵn</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editScheduleModal{{ schedule.id }}">
+                                            <i class="fas fa-edit"></i> Sửa
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteSchedule('{{ schedule.id }}')">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                        <h5>Chưa có lịch làm việc</h5>
+                        <p class="text-muted">Hãy thêm lịch làm việc để bệnh nhân có thể đặt lịch hẹn.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                            <i class="fas fa-plus"></i> Thêm lịch làm việc đầu tiên
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm lịch làm việc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Thứ</label>
+                        <select name="weekday" class="form-select" required>
+                            <option value="">Chọn thứ</option>
+                            {% for key, value in weekdays %}
+                                <option value="{{ key }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Giờ bắt đầu</label>
+                                <input type="time" name="start_time" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Giờ kết thúc</label>
+                                <input type="time" name="end_time" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Thêm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Schedule Modals -->
+{% for schedule in schedules %}
+<div class="modal fade" id="editScheduleModal{{ schedule.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa lịch làm việc - {{ schedule.get_weekday_display }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'update_schedule' schedule.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Thứ</label>
+                        <select name="weekday" class="form-select" required>
+                            {% for key, value in weekdays %}
+                                <option value="{{ key }}" {% if schedule.weekday == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Giờ bắt đầu</label>
+                                <input type="time" name="start_time" class="form-control" value="{{ schedule.start_time|time:'H:i' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Giờ kết thúc</label>
+                                <input type="time" name="end_time" class="form-control" value="{{ schedule.end_time|time:'H:i' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_available" id="available{{ schedule.id }}" {% if schedule.is_available %}checked{% endif %}>
+                            <label class="form-check-label" for="available{{ schedule.id }}">
+                                Có sẵn
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-warning">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-lightbulb"></i> Lưu ý về lịch làm việc</h5>
+            <ul class="mb-0">
+                <li>Bệnh nhân chỉ có thể đặt lịch trong thời gian bạn có sẵn</li>
+                <li>Bạn có thể tạm thời tắt lịch làm việc bằng cách bỏ chọn "Có sẵn"</li>
+                <li>Thời gian làm việc nên hợp lý để đảm bảo chất lượng khám</li>
+                <li>Nên có ít nhất 30 phút cho mỗi lịch hẹn</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteSchedule(scheduleId) {
+    if (confirm('Bạn có chắc chắn muốn xóa lịch làm việc này?')) {
+        // Tạo form và submit để xóa
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/doctors/schedule/' + scheduleId + '/delete/';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

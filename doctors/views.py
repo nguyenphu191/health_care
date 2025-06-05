@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -16,9 +13,9 @@ def doctor_dashboard(request):
         return redirect('home')
     
     doctor = get_object_or_404(Doctor, user=request.user)
-    appointments = Appointment.objects.filter(doctor=doctor)[:5]
+    appointments = Appointment.objects.filter(doctor=doctor).order_by('-created_at')[:5]
     pending_appointments = appointments.filter(status='pending').count()
-    questions = Question.objects.all()[:5]
+    questions = Question.objects.all().order_by('-created_at')[:5]
     
     context = {
         'doctor': doctor,
@@ -34,7 +31,7 @@ def doctor_appointments(request):
         return redirect('home')
     
     doctor = get_object_or_404(Doctor, user=request.user)
-    appointments = Appointment.objects.filter(doctor=doctor)
+    appointments = Appointment.objects.filter(doctor=doctor).order_by('-created_at')
     
     return render(request, 'doctors/appointments.html', {
         'appointments': appointments
@@ -67,26 +64,72 @@ def doctor_schedule(request):
         return redirect('home')
     
     doctor = get_object_or_404(Doctor, user=request.user)
-    schedules = DoctorSchedule.objects.filter(doctor=doctor)
+    schedules = DoctorSchedule.objects.filter(doctor=doctor).order_by('weekday', 'start_time')
     
     if request.method == 'POST':
         weekday = request.POST.get('weekday')
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
         
-        DoctorSchedule.objects.create(
+        # Kiểm tra trùng lặp
+        existing_schedule = DoctorSchedule.objects.filter(
             doctor=doctor,
             weekday=int(weekday),
-            start_time=start_time,
-            end_time=end_time
-        )
-        messages.success(request, 'Thêm lịch làm việc thành công!')
+            start_time=start_time
+        ).first()
+        
+        if existing_schedule:
+            messages.error(request, 'Lịch làm việc này đã tồn tại!')
+        else:
+            DoctorSchedule.objects.create(
+                doctor=doctor,
+                weekday=int(weekday),
+                start_time=start_time,
+                end_time=end_time
+            )
+            messages.success(request, 'Thêm lịch làm việc thành công!')
         return redirect('doctor_schedule')
     
     return render(request, 'doctors/schedule.html', {
         'schedules': schedules,
         'weekdays': DoctorSchedule.WEEKDAYS
     })
+
+@login_required
+def update_schedule(request, schedule_id):
+    if request.user.user_type != 'doctor':
+        return redirect('home')
+    
+    schedule = get_object_or_404(DoctorSchedule, id=schedule_id, doctor__user=request.user)
+    
+    if request.method == 'POST':
+        weekday = request.POST.get('weekday')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        is_available = request.POST.get('is_available') == 'on'
+        
+        schedule.weekday = int(weekday)
+        schedule.start_time = start_time
+        schedule.end_time = end_time
+        schedule.is_available = is_available
+        schedule.save()
+        
+        messages.success(request, 'Cập nhật lịch làm việc thành công!')
+    
+    return redirect('doctor_schedule')
+
+@login_required
+def delete_schedule(request, schedule_id):
+    if request.user.user_type != 'doctor':
+        return redirect('home')
+    
+    schedule = get_object_or_404(DoctorSchedule, id=schedule_id, doctor__user=request.user)
+    
+    if request.method == 'POST':
+        schedule.delete()
+        messages.success(request, 'Xóa lịch làm việc thành công!')
+    
+    return redirect('doctor_schedule')
 
 @login_required
 def answer_question(request, question_id):
@@ -104,7 +147,7 @@ def answer_question(request, question_id):
             answer.question = question
             answer.save()
             messages.success(request, 'Trả lời câu hỏi thành công!')
-            return redirect('qa_list')
+            return redirect('question_detail', question_id=question.id)
     else:
         form = AnswerForm()
     

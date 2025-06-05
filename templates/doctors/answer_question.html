@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Trả lời câu hỏi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'qa_list' %}">Hỏi đáp</a></li>
+                <li class="breadcrumb-item active">Trả lời câu hỏi</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Question Display -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h4 class="mb-0">
+                    <i class="fas fa-question-circle text-primary"></i>
+                    {{ question.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="question-content mb-3">
+                    {{ question.content|linebreaks }}
+                </div>
+                
+                <hr>
+                
+                <div class="question-meta">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i>
+                                <strong>Người hỏi:</strong>
+                                {% if question.is_anonymous %}
+                                    Ẩn danh
+                                {% else %}
+                                    {{ question.patient.user.get_full_name }}
+                                {% endif %}
+                            </small>
+                            {% if question.category %}
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-tag"></i>
+                                    <strong>Danh mục:</strong>
+                                    <span class="badge bg-secondary">{{ question.category }}</span>
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i>
+                                <strong>Thời gian:</strong>
+                                {{ question.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Answer Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-reply text-success"></i>
+                    Trả lời câu hỏi
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            <strong>Câu trả lời của bạn</strong>
+                        </label>
+                        {{ form.content }}
+                        <div class="form-text">
+                            Vui lòng cung cấp câu trả lời chi tiết và hữu ích cho bệnh nhân.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'qa_list' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Gửi câu trả lời
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing Answers -->
+{% if question.answers.all %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i>
+                    Câu trả lời đã có ({{ question.answers.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for answer in question.answers.all %}
+                <div class="border-start border-4 border-info ps-3 mb-3">
+                    <div class="answer-content mb-2">
+                        {{ answer.content|linebreaks }}
+                    </div>
+                    <div class="answer-meta">
+                        <small class="text-muted">
+                            <i class="fas fa-user-md"></i>
+                            <strong>{{ answer.doctor }}</strong>
+                            - {{ answer.created_at|date:"d/m/Y H:i" }}
+                            {% if answer.is_helpful %}
+                                <span class="badge bg-success ms-2">
+                                    <i class="fas fa-thumbs-up"></i> Hữu ích
+                                </span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                {% if not forloop.last %}
+                    <hr>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle"></i> Lưu ý khi trả lời</h6>
+            <ul class="mb-0">
+                <li>Cung cấp thông tin y khoa chính xác và dễ hiểu</li>
+                <li>Khuyến nghị bệnh nhân đến khám trực tiếp nếu cần thiết</li>
+                <li>Tránh chẩn đoán qua mạng, chỉ đưa ra tư vấn chung</li>
+                <li>Giữ tôn trọng và chuyên nghiệp trong giao tiếp</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h6><i class="fas fa-exclamation-triangle"></i> Tuyên bố miễn trừ trách nhiệm</h6>
+            <p class="mb-0">
+                Câu trả lời này chỉ mang tính chất tham khảo và không thể thay thế cho việc khám, tư vấn trực tiếp của bác sĩ. 
+                Trong mọi trường hợp, bệnh nhân nên đến cơ sở y tế để được khám và điều trị phù hợp.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

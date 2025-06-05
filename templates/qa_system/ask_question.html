@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Đặt câu hỏi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-question-circle"></i> Đặt câu hỏi cho bác sĩ</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {{ form.title|as_crispy_field }}
+                    {{ form.content|as_crispy_field }}
+                    {{ form.category|as_crispy_field }}
+                    
+                    <div class="form-check mb-3">
+                        {{ form.is_anonymous }}
+                        <label class="form-check-label" for="{{ form.is_anonymous.id_for_label }}">
+                            Đặt câu hỏi ẩn danh (tên của bạn sẽ không hiển thị)
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane"></i> Gửi câu hỏi
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'qa_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-lightbulb"></i> Mẹo đặt câu hỏi hiệu quả</h5>
+            <ul class="mb-0">
+                <li><strong>Tiêu đề rõ ràng:</strong> Tóm tắt vấn đề chính trong tiêu đề</li>
+                <li><strong>Mô tả chi tiết:</strong> Cung cấp thông tin đầy đủ về triệu chứng, thời gian xuất hiện</li>
+                <li><strong>Thông tin liên quan:</strong> Tuổi, giới tính, tiền sử bệnh (nếu có)</li>
+                <li><strong>Không thay thế khám trực tiếp:</strong> Câu trả lời chỉ mang tính tham khảo</li>
+                <li><strong>Bảo mật thông tin:</strong> Không chia sẻ thông tin quá cá nhân nếu không ẩn danh</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h6><i class="fas fa-exclamation-triangle"></i> Lưu ý quan trọng</h6>
+            <p class="mb-0">
+                Các câu trả lời từ bác sĩ chỉ mang tính tham khảo và không thể thay thế cho việc khám, chẩn đoán trực tiếp. 
+                Trong trường hợp cần thiết, vui lòng đặt lịch hẹn để được khám trực tiếp.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

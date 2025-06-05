@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Hỏi đáp{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-comments"></i> Hỏi đáp với bác sĩ</h2>
+            {% if user.user_type == 'patient' %}
+                <a href="{% url 'ask_question' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Đặt câu hỏi
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if questions %}
+<div class="row">
+    <div class="col-12">
+        {% for question in questions %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <a href="{% url 'question_detail' question.id %}" class="text-decoration-none">
+                            {{ question.title }}
+                        </a>
+                    </h5>
+                    <div>
+                        {% if question.category %}
+                            <span class="badge bg-secondary">{{ question.category }}</span>
+                        {% endif %}
+                        {% if question.is_anonymous %}
+                            <span class="badge bg-warning">Ẩn danh</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ question.content|truncatewords:30 }}</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i>
+                            {% if question.is_anonymous %}
+                                Ẩn danh
+                            {% else %}
+                                {{ question.patient.user.get_full_name }}
+                            {% endif %}
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i>
+                            {{ question.created_at|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group">
+                            <a href="{% url 'question_detail' question.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> Xem chi tiết
+                            </a>
+                            {% if user.user_type == 'doctor' and question.answers.count == 0 %}
+                                <a href="{% url 'answer_question' question.id %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-reply"></i> Trả lời
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-2">
+                            {% if question.answers.count > 0 %}
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    Đã có {{ question.answers.count }} câu trả lời
+                                </small>
+                            {% else %}
+                                <small class="text-muted">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    Chưa có câu trả lời
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                <h4>Chưa có câu hỏi nào</h4>
+                <p class="text-muted">Hãy là người đầu tiên đặt câu hỏi cho bác sĩ.</p>
+                {% if user.user_type == 'patient' %}
+                    <a href="{% url 'ask_question' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i> Đặt câu hỏi đầu tiên
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> Hướng dẫn sử dụng</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Dành cho bệnh nhân:</strong>
+                    <ul>
+                        <li>Đặt câu hỏi về sức khỏe, triệu chứng</li>
+                        <li>Có thể chọn đặt câu hỏi ẩn danh</li>
+                        <li>Theo dõi câu trả lời từ bác sĩ</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong>Dành cho bác sĩ:</strong>
+                    <ul>
+                        <li>Trả lời câu hỏi từ bệnh nhân</li>
+                        <li>Chia sẻ kiến thức y khoa</li>
+                        <li>Hỗ trợ tư vấn sức khỏe cộng đồng</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

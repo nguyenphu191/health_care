@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Bác sĩ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Chào mừng, {{ doctor.user.get_full_name }}</h2>
+        <p class="text-muted">Dashboard dành cho bác sĩ</p>
+        {% if not doctor.is_verified %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Tài khoản của bạn đang chờ xác minh. Vui lòng liên hệ quản trị viên để được kích hoạt.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-clock fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ pending_appointments }}</h5>
+                        <p class="card-text">Lịch hẹn chờ xác nhận</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-calendar-check fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ appointments.count }}</h5>
+                        <p class="card-text">Tổng lịch hẹn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-question-circle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ questions.count }}</h5>
+                        <p class="card-text">Câu hỏi mới</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-user-md fa-2x me-3"></i>
+                    <div>
+                        <h6 class="card-title">{{ doctor.experience_years }} năm</h6>
+                        <p class="card-text">Kinh nghiệm</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-alt"></i> Lịch hẹn gần đây</h5>
+            </div>
+            <div class="card-body">
+                {% if appointments %}
+                    <div class="list-group list-group-flush">
+                        {% for appointment in appointments %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ appointment.patient.user.get_full_name }}</h6>
+                                    <p class="mb-1">{{ appointment.appointment_date }} - {{ appointment.appointment_time }}</p>
+                                    <small class="text-muted">{{ appointment.symptoms|truncatewords:8 }}</small>
+                                </div>
+                                <div>
+                                    <span class="badge badge-{% if appointment.status == 'pending' %}warning{% elif appointment.status == 'confirmed' %}info{% elif appointment.status == 'completed' %}success{% else %}danger{% endif %}">
+                                        {{ appointment.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'doctor_appointments' %}" class="btn btn-outline-primary">Xem tất cả</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Chưa có lịch hẹn nào.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-question-circle"></i> Câu hỏi mới</h5>
+            </div>
+            <div class="card-body">
+                {% if questions %}
+                    <div class="list-group list-group-flush">
+                        {% for question in questions %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ question.title }}</h6>
+                                    <p class="mb-1 text-truncate">{{ question.content|truncatewords:10 }}</p>
+                                    <small class="text-muted">
+                                        {% if question.is_anonymous %}
+                                            Ẩn danh
+                                        {% else %}
+                                            {{ question.patient.user.get_full_name }}
+                                        {% endif %}
+                                        - {{ question.created_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'answer_question' question.id %}" class="btn btn-sm btn-outline-primary">
+                                        Trả lời
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'qa_list' %}" class="btn btn-outline-success">Xem tất cả</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Chưa có câu hỏi mới nào.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-circle"></i> Thông tin cá nhân</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Số giấy phép hành nghề:</strong> {{ doctor.license_number }}</p>
+                        <p><strong>Năm kinh nghiệm:</strong> {{ doctor.experience_years }} năm</p>
+                        <p><strong>Chuyên khoa:</strong> 
+                            {% for spec in doctor.specializations.all %}
+                                <span class="badge bg-info">{{ spec.name }}</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> {{ doctor.user.email }}</p>
+                        <p><strong>Số điện thoại:</strong> {{ doctor.user.phone_number }}</p>
+                        <p><strong>Phí tư vấn:</strong> {{ doctor.consultation_fee|floatformat:0 }} VNĐ</p>
+                    </div>
+                </div>
+                {% if doctor.bio %}
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>Giới thiệu:</strong></p>
+                        <p>{{ doctor.bio }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <div class="btn-group" role="group">
+            <a href="{% url 'doctor_appointments' %}" class="btn btn-primary">
+                <i class="fas fa-calendar-alt"></i> Quản lý lịch hẹn
+            </a>
+            <a href="{% url 'doctor_schedule' %}" class="btn btn-info">
+                <i class="fas fa-clock"></i> Lịch làm việc
+            </a>
+            <a href="{% url 'qa_list' %}" class="btn btn-success">
+                <i class="fas fa-question-circle"></i> Hỏi đáp
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

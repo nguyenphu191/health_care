@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Lịch hẹn của tôi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-calendar-alt"></i> Lịch hẹn của tôi</h2>
+            <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Đặt lịch mới
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if appointments %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Bác sĩ</th>
+                                <th>Ngày</th>
+                                <th>Giờ</th>
+                                <th>Trạng thái</th>
+                                <th>Triệu chứng</th>
+                                <th>Chẩn đoán</th>
+                                <th>Đơn thuốc</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                            <tr>
+                                <td>
+                                    <strong>{{ appointment.doctor }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% for spec in appointment.doctor.specializations.all %}
+                                            {{ spec.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                </td>
+                                <td>{{ appointment.appointment_date|date:"d/m/Y" }}</td>
+                                <td>{{ appointment.appointment_time|time:"H:i" }}</td>
+                                <td>
+                                    {% if appointment.status == 'pending' %}
+                                        <span class="badge bg-warning">{{ appointment.get_status_display }}</span>
+                                    {% elif appointment.status == 'confirmed' %}
+                                        <span class="badge bg-info">{{ appointment.get_status_display }}</span>
+                                    {% elif appointment.status == 'completed' %}
+                                        <span class="badge bg-success">{{ appointment.get_status_display }}</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ appointment.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="max-width: 200px;">
+                                        {{ appointment.symptoms|truncatewords:10 }}
+                                        {% if appointment.symptoms|length > 50 %}
+                                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#symptomsModal{{ appointment.id }}">
+                                                Xem thêm
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if appointment.diagnosis %}
+                                        <div style="max-width: 200px;">
+                                            {{ appointment.diagnosis|truncatewords:10 }}
+                                            {% if appointment.diagnosis|length > 50 %}
+                                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#diagnosisModal{{ appointment.id }}">
+                                                    Xem thêm
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Chưa có</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if appointment.prescription %}
+                                        <div style="max-width: 200px;">
+                                            {{ appointment.prescription|truncatewords:10 }}
+                                            {% if appointment.prescription|length > 50 %}
+                                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#prescriptionModal{{ appointment.id }}">
+                                                    Xem thêm
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Chưa có</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for detailed view -->
+{% for appointment in appointments %}
+<!-- Symptoms Modal -->
+{% if appointment.symptoms|length > 50 %}
+<div class="modal fade" id="symptomsModal{{ appointment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Triệu chứng chi tiết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{ appointment.symptoms|linebreaks }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Diagnosis Modal -->
+{% if appointment.diagnosis and appointment.diagnosis|length > 50 %}
+<div class="modal fade" id="diagnosisModal{{ appointment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chẩn đoán chi tiết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{ appointment.diagnosis|linebreaks }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Prescription Modal -->
+{% if appointment.prescription and appointment.prescription|length > 50 %}
+<div class="modal fade" id="prescriptionModal{{ appointment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Đơn thuốc chi tiết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{ appointment.prescription|linebreaks }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h4>Chưa có lịch hẹn nào</h4>
+                <p class="text-muted">Bạn chưa đặt lịch hẹn nào. Hãy đặt lịch để được bác sĩ tư vấn.</p>
+                <a href="{% url 'book_appointment' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> Đặt lịch hẹn đầu tiên
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-3">
+    <div class="col-12 text-center">
+        <a href="{% url 'patient_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

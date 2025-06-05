@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Đăng ký Bác sĩ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">
+                    <i class="fas fa-user-md"></i> Đăng ký Bác sĩ
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Thông tin tài khoản</h5>
+                            {{ form.username|as_crispy_field }}
+                            {{ form.email|as_crispy_field }}
+                            {{ form.password1|as_crispy_field }}
+                            {{ form.password2|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Thông tin cá nhân</h5>
+                            {{ form.first_name|as_crispy_field }}
+                            {{ form.last_name|as_crispy_field }}
+                            {{ form.phone_number|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Thông tin chuyên môn</h5>
+                            {{ form.license_number|as_crispy_field }}
+                            {{ form.qualification|as_crispy_field }}
+                            
+                            <div class="form-group">
+                                <label for="{{ form.specializations.id_for_label }}">Chuyên khoa:</label>
+                                {{ form.specializations }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus"></i> Đăng ký
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p>Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>
+                    <p>Hoặc <a href="{% url 'patient_register' %}">Đăng ký với tư cách Bệnh nhân</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add some styling to checkboxes
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.classList.add('form-check-input');
+        if (checkbox.parentElement) {
+            checkbox.parentElement.classList.add('form-check');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -13,8 +13,12 @@ def doctor_dashboard(request):
         return redirect('home')
     
     doctor = get_object_or_404(Doctor, user=request.user)
-    appointments = Appointment.objects.filter(doctor=doctor).order_by('-created_at')[:5]
-    pending_appointments = appointments.filter(status='pending').count()
+    
+    # Sửa lỗi: Phải lấy toàn bộ appointments trước, sau đó filter và slice riêng biệt
+    all_appointments = Appointment.objects.filter(doctor=doctor).order_by('-created_at')
+    appointments = all_appointments[:5]  # Lấy 5 appointments gần nhất để hiển thị
+    pending_appointments = all_appointments.filter(status='pending').count()  # Đếm pending từ toàn bộ appointments
+    
     questions = Question.objects.all().order_by('-created_at')[:5]
     
     context = {

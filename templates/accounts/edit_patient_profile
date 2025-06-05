@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Chỉnh sửa thông tin - Bệnh nhân{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-edit"></i> Chỉnh sửa thông tin cá nhân</h2>
+            <a href="{% url 'patient_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user"></i> Thông tin bệnh nhân</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Personal Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-id-card"></i> Thông tin cá nhân</h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.first_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.last_name|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.phone_number|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.date_of_birth|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.gender|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label">Ảnh đại diện</label>
+                                {% if patient.user.avatar %}
+                                    <div class="mb-2">
+                                        <img src="{{ patient.user.avatar.url }}" class="rounded-circle" width="60" height="60" alt="Current avatar">
+                                    </div>
+                                {% endif %}
+                                {{ form.avatar }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.blood_type|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-12">
+                            {{ form.address|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.emergency_contact|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Medical Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-heartbeat"></i> Thông tin y tế</h6>
+                        </div>
+                        
+                        <div class="col-12">
+                            {{ form.medical_history|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.allergies|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.current_medications|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Account Information Display -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Thông tin tài khoản</h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <p><strong>Tên đăng nhập:</strong> {{ patient.user.username }}</p>
+                            <p><strong>Ngày đăng ký:</strong> {{ patient.user.date_joined|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Đăng nhập cuối:</strong> {{ patient.user.last_login|date:"d/m/Y H:i"|default:"Chưa đăng nhập" }}</p>
+                            <p><strong>Trạng thái:</strong> <span class="badge bg-success">Đang hoạt động</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'patient_dashboard' %}" class="btn btn-outline-secondary me-md-2">
+                                    <i class="fas fa-times"></i> Hủy
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Lưu thay đổi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-shield-alt"></i> Bảo mật thông tin</h6>
+            <ul class="mb-0">
+                <li>Thông tin y tế của bạn được bảo mật và chỉ chia sẻ với bác sĩ điều trị</li>
+                <li>Cập nhật thông tin chính xác giúp bác sĩ tư vấn tốt hơn</li>
+                <li>Số điện thoại khẩn cấp sẽ được sử dụng khi cần thiết</li>
+                <li>Thông tin dị ứng và thuốc đang dùng rất quan trọng cho an toàn điều trị</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h6><i class="fas fa-exclamation-triangle"></i> Lưu ý quan trọng</h6>
+            <p class="mb-0">
+                Vui lòng cung cấp thông tin y tế chính xác và đầy đủ. Thông tin này sẽ giúp bác sĩ 
+                có cái nhìn tổng quan về tình trạng sức khỏe của bạn và đưa ra lời khuyên phù hợp.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Preview avatar when selecting new file
+document.getElementById('{{ form.avatar.id_for_label }}').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Remove existing preview if any
+            const existingPreview = document.querySelector('.avatar-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Create new preview
+            const preview = document.createElement('div');
+            preview.className = 'avatar-preview mt-2';
+            preview.innerHTML = `
+                <img src="${e.target.result}" class="rounded-circle" width="60" height="60" alt="Preview">
+                <small class="d-block text-muted">Ảnh xem trước</small>
+            `;
+            
+            // Insert preview after the file input
+            event.target.parentNode.appendChild(preview);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

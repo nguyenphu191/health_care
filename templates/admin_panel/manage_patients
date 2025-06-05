@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý bệnh nhân{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-users"></i> Quản lý bệnh nhân</h2>
+            <div>
+                <a href="{% url 'admin_create_patient' %}" class="btn btn-success">
+                    <i class="fas fa-user-plus"></i> Tạo tài khoản mới
+                </a>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users fa-2x text-primary me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Tổng bệnh nhân</h6>
+                                <h4 class="mb-0 text-primary">{{ patients.paginator.count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt fa-2x text-info me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Có lịch hẹn</h6>
+                                <h4 class="mb-0 text-info">--</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-question-circle fa-2x text-success me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Có câu hỏi</h6>
+                                <h4 class="mb-0 text-success">--</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-plus fa-2x text-warning me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Mới hôm nay</h6>
+                                <h4 class="mb-0 text-warning">--</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if patients %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Bệnh nhân</th>
+                                <th>Email</th>
+                                <th>Giới tính</th>
+                                <th>Ngày sinh</th>
+                                <th>Nhóm máu</th>
+                                <th>SĐT khẩn cấp</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in patients %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if patient.user.avatar %}
+                                            <img src="{{ patient.user.avatar.url }}" class="rounded-circle me-2" width="40" height="40" alt="Avatar">
+                                        {% else %}
+                                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ patient.user.get_full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ patient.user.username }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ patient.user.email }}</td>
+                                <td>
+                                    <span class="badge bg-{% if patient.gender == 'M' %}primary{% elif patient.gender == 'F' %}danger{% else %}secondary{% endif %}">
+                                        {{ patient.get_gender_display }}
+                                    </span>
+                                </td>
+                                <td>{{ patient.user.date_of_birth|date:"d/m/Y"|default:"Chưa cập nhật" }}</td>
+                                <td>
+                                    {% if patient.blood_type %}
+                                        <span class="badge bg-info">{{ patient.blood_type }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Chưa có</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ patient.emergency_contact|default:"Chưa có" }}</td>
+                                <td>{{ patient.user.date_joined|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'patient_detail_admin' patient.user.id %}" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        <!-- <button class="btn btn-sm btn-warning" 
+                                                onclick="resetPassword({{ patient.user.id }}, '{{ patient.user.get_full_name }}')"
+                                                title="Reset mật khẩu">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        
+                                        <button class="btn btn-sm btn-{% if patient.user.is_active %}danger{% else %}success{% endif %}" 
+                                                onclick="toggleUserStatus({{ patient.user.id }}, {{ patient.user.is_active|yesno:'true,false' }})"
+                                                title="{% if patient.user.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %}">
+                                            <i class="fas {% if patient.user.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                        </button> -->
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if patients.has_other_pages %}
+                <nav aria-label="Pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if patients.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">Đầu</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ patients.previous_page_number }}">Trước</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ patients.number }} / {{ patients.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if patients.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ patients.next_page_number }}">Sau</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ patients.paginator.num_pages }}">Cuối</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h4>Chưa có bệnh nhân nào</h4>
+                <p class="text-muted">Hệ thống chưa có bệnh nhân đăng ký.</p>
+                <a href="{% url 'admin_create_patient' %}" class="btn btn-success">
+                    <i class="fas fa-user-plus"></i> Tạo tài khoản bệnh nhân đầu tiên
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> Quản lý bệnh nhân</h5>
+            <ul class="mb-0">
+                <li><strong>Xem chi tiết:</strong> Xem thông tin, lịch hẹn, câu hỏi của bệnh nhân</li>
+                <li><strong>Reset mật khẩu:</strong> Tạo mật khẩu mới cho bệnh nhân khi cần</li>
+                <li><strong>Vô hiệu hóa:</strong> Tạm khóa tài khoản bệnh nhân</li>
+                <li><strong>Thông tin y tế:</strong> Chỉ hiển thị cho mục đích quản lý, đảm bảo bảo mật</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetPassword(patientId, patientName) {
+    if (confirm(`Bạn có muốn reset mật khẩu cho bệnh nhân "${patientName}"?`)) {
+        // Tạo mật khẩu ngẫu nhiên
+        const newPassword = generateRandomPassword();
+        
+        // Hiển thị mật khẩu mới
+        alert(`Mật khẩu mới cho ${patientName}: ${newPassword}\n\nVui lòng ghi nhận và thông báo cho bệnh nhân.`);
+        
+        // TODO: Implement actual password reset via AJAX
+        console.log(`Reset password for patient ${patientId}: ${newPassword}`);
+    }
+}
+
+function toggleUserStatus(userId, currentStatus) {
+    const action = currentStatus ? 'vô hiệu hóa' : 'kích hoạt';
+    
+    if (confirm(`Bạn có chắc chắn muốn ${action} tài khoản này?`)) {
+        // TODO: Implement via AJAX
+        console.log(`Toggle user ${userId} status from ${currentStatus}`);
+        showAlert('success', `Đã ${action} tài khoản thành công!`);
+    }
+}
+
+function generateRandomPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const content = document.querySelector('main .container');
+    content.insertBefore(alertDiv, content.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

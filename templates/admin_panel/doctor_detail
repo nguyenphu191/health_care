@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi tiết bác sĩ - {{ doctor.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'manage_doctors' %}">Quản lý bác sĩ</a></li>
+                <li class="breadcrumb-item active">{{ doctor.user.get_full_name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-md"></i> Chi tiết bác sĩ</h2>
+            <!-- <div>
+                <button class="btn btn-{% if doctor.is_verified %}warning{% else %}success{% endif %}" 
+                        onclick="toggleVerification({{ doctor.user.id }}, {{ doctor.is_verified|yesno:'true,false' }})">
+                    <i class="fas {% if doctor.is_verified %}fa-times{% else %}fa-check{% endif %}"></i>
+                    {% if doctor.is_verified %}Hủy kích hoạt{% else %}Kích hoạt{% endif %}
+                </button>
+                <a href="{% url 'manage_doctors' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Doctor Information -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-id-card"></i> Thông tin cá nhân</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if doctor.user.avatar %}
+                        <img src="{{ doctor.user.avatar.url }}" class="rounded-circle" width="100" height="100" alt="Avatar">
+                    {% else %}
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px;">
+                            <i class="fas fa-user-md fa-2x text-white"></i>
+                        </div>
+                    {% endif %}
+                    <h5 class="mt-2">{{ doctor.user.get_full_name }}</h5>
+                    <p class="text-muted">{{ doctor.user.username }}</p>
+                    <div id="status-display">
+                        {% if doctor.is_verified %}
+                            <span class="badge bg-success">Đã kích hoạt</span>
+                        {% else %}
+                            <span class="badge bg-warning">Chờ duyệt</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ doctor.user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Điện thoại:</strong></td>
+                        <td>{{ doctor.user.phone_number|default:"Chưa cập nhật" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ngày sinh:</strong></td>
+                        <td>{{ doctor.user.date_of_birth|date:"d/m/Y"|default:"Chưa cập nhật" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Địa chỉ:</strong></td>
+                        <td>{{ doctor.user.address|default:"Chưa cập nhật" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Đăng ký:</strong></td>
+                        <td>{{ doctor.user.date_joined|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Đăng nhập cuối:</strong></td>
+                        <td>{{ doctor.user.last_login|date:"d/m/Y H:i"|default:"Chưa đăng nhập" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Professional Information -->
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-briefcase"></i> Thông tin chuyên môn</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Số giấy phép:</strong></td>
+                                <td>{{ doctor.license_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Kinh nghiệm:</strong></td>
+                                <td>{{ doctor.experience_years }} năm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phí tư vấn:</strong></td>
+                                <td>{{ doctor.consultation_fee|floatformat:0 }} VNĐ</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Chuyên khoa:</strong></p>
+                        <div>
+                            {% for spec in doctor.specializations.all %}
+                                <span class="badge bg-info me-1">{{ spec.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <p><strong>Trình độ chuyên môn:</strong></p>
+                        <p class="text-muted">{{ doctor.qualification|linebreaks }}</p>
+                    </div>
+                </div>
+                
+                {% if doctor.bio %}
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>Giới thiệu:</strong></p>
+                        <p class="text-muted">{{ doctor.bio|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Activity Statistics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-calendar-alt"></i> Lịch hẹn ({{ appointments.count }})</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if appointments %}
+                            <div class="list-group list-group-flush">
+                                {% for appointment in appointments|slice:":5" %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ appointment.patient.user.get_full_name }}</h6>
+                                            <small>{{ appointment.appointment_date|date:"d/m/Y" }} - {{ appointment.appointment_time|time:"H:i" }}</small>
+                                        </div>
+                                        <div>
+                                            <span class="badge badge-{% if appointment.status == 'pending' %}warning{% elif appointment.status == 'confirmed' %}info{% elif appointment.status == 'completed' %}success{% else %}danger{% endif %}">
+                                                {{ appointment.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if appointments.count > 5 %}
+                                <small class="text-muted">Và {{ appointments.count|add:"-5" }} lịch hẹn khác...</small>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted">Chưa có lịch hẹn nào</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-comments"></i> Câu trả lời ({{ answers.count }})</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if answers %}
+                            <div class="list-group list-group-flush">
+                                {% for answer in answers|slice:":5" %}
+                                <div class="list-group-item px-0">
+                                    <h6 class="mb-1">{{ answer.question.title|truncatechars:50 }}</h6>
+                                    <small class="text-muted">{{ answer.created_at|date:"d/m/Y H:i" }}</small>
+                                    {% if answer.is_helpful %}
+                                        <span class="badge bg-success">Hữu ích</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if answers.count > 5 %}
+                                <small class="text-muted">Và {{ answers.count|add:"-5" }} câu trả lời khác...</small>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted">Chưa trả lời câu hỏi nào</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVerification(doctorId, currentStatus) {
+    const action = currentStatus ? 'hủy kích hoạt' : 'kích hoạt';
+    
+    if (confirm(`Bạn có chắc chắn muốn ${action} tài khoản bác sĩ này?`)) {
+        fetch(`/admin/doctors/${doctorId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update status display
+                const statusDisplay = document.getElementById('status-display');
+                const toggleBtn = document.querySelector('button[onclick*="toggleVerification"]');
+                
+                if (data.is_verified) {
+                    statusDisplay.innerHTML = '<span class="badge bg-success">Đã kích hoạt</span>';
+                    toggleBtn.className = 'btn btn-warning';
+                    toggleBtn.innerHTML = '<i class="fas fa-times"></i> Hủy kích hoạt';
+                    toggleBtn.setAttribute('onclick', `toggleVerification(${doctorId}, true)`);
+                } else {
+                    statusDisplay.innerHTML = '<span class="badge bg-warning">Chờ duyệt</span>';
+                    toggleBtn.className = 'btn btn-success';
+                    toggleBtn.innerHTML = '<i class="fas fa-check"></i> Kích hoạt';
+                    toggleBtn.setAttribute('onclick', `toggleVerification(${doctorId}, false)`);
+                }
+                
+                // Show success message
+                showAlert('success', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    }
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert alert at the top of the content
+    const content = document.querySelector('main .container');
+    content.insertBefore(alertDiv, content.firstChild);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

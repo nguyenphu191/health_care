@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý bác sĩ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-md"></i> Quản lý bác sĩ</h2>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link {% if not current_status %}active{% endif %}" href="{% url 'manage_doctors' %}">
+                    <i class="fas fa-list"></i> Tất cả
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_status == 'pending' %}active{% endif %}" href="{% url 'manage_doctors' %}?status=pending">
+                    <i class="fas fa-clock"></i> Chờ duyệt
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_status == 'verified' %}active{% endif %}" href="{% url 'manage_doctors' %}?status=verified">
+                    <i class="fas fa-check-circle"></i> Đã kích hoạt
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+{% if doctors %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Bác sĩ</th>
+                                <th>Email</th>
+                                <th>Số giấy phép</th>
+                                <th>Chuyên khoa</th>
+                                <th>Kinh nghiệm</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doctor in doctors %}
+                            <tr id="doctor-row-{{ doctor.user.id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if doctor.user.avatar %}
+                                            <img src="{{ doctor.user.avatar.url }}" class="rounded-circle me-2" width="40" height="40" alt="Avatar">
+                                        {% else %}
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user-md text-white"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ doctor.user.get_full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ doctor.user.phone_number }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ doctor.user.email }}</td>
+                                <td>{{ doctor.license_number }}</td>
+                                <td>
+                                    {% for spec in doctor.specializations.all %}
+                                        <span class="badge bg-info me-1">{{ spec.name }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ doctor.experience_years }} năm</td>
+                                <td id="status-{{ doctor.user.id }}">
+                                    {% if doctor.is_verified %}
+                                        <span class="badge bg-success">Đã kích hoạt</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Chờ duyệt</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ doctor.user.date_joined|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'doctor_detail_admin' doctor.user.id %}" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        <!-- <button class="btn btn-sm {% if doctor.is_verified %}btn-warning{% else %}btn-success{% endif %}" 
+                                                onclick="toggleVerification({{ doctor.user.id }}, {{ doctor.is_verified|yesno:'true,false' }})"
+                                                id="toggle-btn-{{ doctor.user.id }}"
+                                                title="{% if doctor.is_verified %}Hủy kích hoạt{% else %}Kích hoạt{% endif %}">
+                                            <i class="fas {% if doctor.is_verified %}fa-times{% else %}fa-check{% endif %}" 
+                                               id="toggle-icon-{{ doctor.user.id }}"></i>
+                                        </button> -->
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if doctors.has_other_pages %}
+                <nav aria-label="Pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if doctors.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if current_status %}&status={{ current_status }}{% endif %}">Đầu</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ doctors.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Trước</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ doctors.number }} / {{ doctors.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if doctors.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ doctors.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Sau</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ doctors.paginator.num_pages }}{% if current_status %}&status={{ current_status }}{% endif %}">Cuối</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-user-md fa-4x text-muted mb-3"></i>
+                <h4>Không có bác sĩ nào</h4>
+                <p class="text-muted">
+                    {% if current_status == 'pending' %}
+                        Hiện tại không có bác sĩ nào đang chờ duyệt.
+                    {% elif current_status == 'verified' %}
+                        Hiện tại không có bác sĩ nào đã được kích hoạt.
+                    {% else %}
+                        Chưa có bác sĩ nào đăng ký trong hệ thống.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> Hướng dẫn quản lý</h5>
+            <ul class="mb-0">
+                <li><strong>Chờ duyệt:</strong> Bác sĩ mới đăng ký, chưa thể sử dụng đầy đủ chức năng</li>
+                <li><strong>Đã kích hoạt:</strong> Bác sĩ có thể nhận lịch hẹn và trả lời câu hỏi</li>
+                <li><strong>Hủy kích hoạt:</strong> Tạm thời ngừng hoạt động của bác sĩ</li>
+                <li><strong>Xem chi tiết:</strong> Kiểm tra thông tin đầy đủ và hoạt động của bác sĩ</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVerification(doctorId, currentStatus) {
+    const action = currentStatus ? 'hủy kích hoạt' : 'kích hoạt';
+    
+    if (confirm(`Bạn có chắc chắn muốn ${action} tài khoản bác sĩ này?`)) {
+        fetch(`/admin/doctors/${doctorId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update status badge
+                const statusElement = document.getElementById(`status-${doctorId}`);
+                const toggleBtn = document.getElementById(`toggle-btn-${doctorId}`);
+                const toggleIcon = document.getElementById(`toggle-icon-${doctorId}`);
+                
+                if (data.is_verified) {
+                    statusElement.innerHTML = '<span class="badge bg-success">Đã kích hoạt</span>';
+                    toggleBtn.className = 'btn btn-sm btn-warning';
+                    toggleBtn.title = 'Hủy kích hoạt';
+                    toggleIcon.className = 'fas fa-times';
+                } else {
+                    statusElement.innerHTML = '<span class="badge bg-warning">Chờ duyệt</span>';
+                    toggleBtn.className = 'btn btn-sm btn-success';
+                    toggleBtn.title = 'Kích hoạt';
+                    toggleIcon.className = 'fas fa-check';
+                }
+                
+                // Update onclick function
+                toggleBtn.setAttribute('onclick', `toggleVerification(${doctorId}, ${data.is_verified})`);
+                
+                // Show success message
+                showAlert('success', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    }
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert alert at the top of the content
+    const content = document.querySelector('main .container');
+    content.insertBefore(alertDiv, content.firstChild);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

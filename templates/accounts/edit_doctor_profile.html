@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Chỉnh sửa thông tin - Bác sĩ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-edit"></i> Chỉnh sửa thông tin cá nhân</h2>
+            <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-md"></i> Thông tin bác sĩ</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Personal Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-user"></i> Thông tin cá nhân</h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.first_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.last_name|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.phone_number|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.date_of_birth|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label">Ảnh đại diện</label>
+                                {% if doctor.user.avatar %}
+                                    <div class="mb-2">
+                                        <img src="{{ doctor.user.avatar.url }}" class="rounded-circle" width="60" height="60" alt="Current avatar">
+                                    </div>
+                                {% endif %}
+                                {{ form.avatar }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            {{ form.address|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Professional Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-briefcase"></i> Thông tin chuyên môn</h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.experience_years|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.consultation_fee|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label">Chuyên khoa</label>
+                                <div class="row">
+                                    {% for choice in form.specializations %}
+                                        <div class="col-md-4 col-sm-6">
+                                            <div class="form-check">
+                                                {{ choice.tag }}
+                                                <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                    {{ choice.choice_label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            {{ form.qualification|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-12">
+                            {{ form.bio|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <!-- Current Information Display -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Thông tin hiện tại</h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <p><strong>Số giấy phép:</strong> {{ doctor.license_number }}</p>
+                            <p><strong>Trạng thái:</strong> 
+                                {% if doctor.is_verified %}
+                                    <span class="badge bg-success">Đã kích hoạt</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Chờ xét duyệt</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Ngày đăng ký:</strong> {{ doctor.user.date_joined|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Cập nhật cuối:</strong> {{ doctor.user.last_login|date:"d/m/Y H:i"|default:"Chưa đăng nhập" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary me-md-2">
+                                    <i class="fas fa-times"></i> Hủy
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Lưu thay đổi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-lightbulb"></i> Lưu ý</h6>
+            <ul class="mb-0">
+                <li>Thông tin cá nhân sẽ được hiển thị cho bệnh nhân khi đặt lịch hẹn</li>
+                <li>Số giấy phép hành nghề không thể thay đổi, liên hệ admin nếu cần</li>
+                <li>Trạng thái "Đã kích hoạt" mới có thể nhận lịch hẹn từ bệnh nhân</li>
+                <li>Phí tư vấn sẽ hiển thị cho bệnh nhân tham khảo</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Preview avatar when selecting new file
+document.getElementById('{{ form.avatar.id_for_label }}').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Remove existing preview if any
+            const existingPreview = document.querySelector('.avatar-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Create new preview
+            const preview = document.createElement('div');
+            preview.className = 'avatar-preview mt-2';
+            preview.innerHTML = `
+                <img src="${e.target.result}" class="rounded-circle" width="60" height="60" alt="Preview">
+                <small class="d-block text-muted">Ảnh xem trước</small>
+            `;
+            
+            // Insert preview after the file input
+            event.target.parentNode.appendChild(preview);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

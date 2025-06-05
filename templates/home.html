@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Trang chủ - Health Care System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 text-center">
+        <h1 class="display-4">Chào mừng đến với Health Care System</h1>
+        <p class="lead">Hệ thống quản lý chăm sóc sức khỏe toàn diện</p>
+        
+        {% if not user.is_authenticated %}
+        <div class="mt-5">
+            <h3>Đăng ký tài khoản</h3>
+            <div class="row justify-content-center mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-md fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Dành cho Bác sĩ</h5>
+                            <p class="card-text">Quản lý lịch hẹn, trả lời câu hỏi bệnh nhân</p>
+                            <a href="{% url 'doctor_register' %}" class="btn btn-primary">Đăng ký</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Dành cho Bệnh nhân</h5>
+                            <p class="card-text">Đặt lịch khám, hỏi đáp với bác sĩ</p>
+                            <a href="{% url 'patient_register' %}" class="btn btn-success">Đăng ký</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

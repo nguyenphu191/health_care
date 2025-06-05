@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Health Care System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-heartbeat"></i> Health Care
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                    {% if user.user_type == 'doctor' %}
+                        <a class="nav-link" href="{% url 'doctor_appointments' %}">Lịch hẹn</a>
+                        <a class="nav-link" href="{% url 'doctor_schedule' %}">Lịch làm việc</a>
+                    {% elif user.user_type == 'patient' %}
+                        <a class="nav-link" href="{% url 'book_appointment' %}">Đặt lịch</a>
+                        <a class="nav-link" href="{% url 'patient_appointments' %}">Lịch hẹn của tôi</a>
+                    {% endif %}
+                    <a class="nav-link" href="{% url 'qa_list' %}">Hỏi đáp</a>
+                    <a class="nav-link" href="{% url 'logout' %}">Đăng xuất</a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'login' %}">Đăng nhập</a>
+                    <a class="nav-link" href="{% url 'doctor_register' %}">Đăng ký BS</a>
+                    <a class="nav-link" href="{% url 'patient_register' %}">Đăng ký BN</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

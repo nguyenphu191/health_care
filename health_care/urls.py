@@ -10,6 +10,7 @@ urlpatterns = [
     path('patients/', include('patients.urls')),
     path('appointments/', include('appointments.urls')),
     path('qa/', include('qa_system.urls')),
+    path('chatbot/', include('chatbot.urls')),  # Thêm chatbot URLs
 ]
 
 if settings.DEBUG:

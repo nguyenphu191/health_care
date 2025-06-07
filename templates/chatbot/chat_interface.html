@@ -1,0 +1,581 @@
+{% extends 'base.html' %}
+
+{% block title %}Trợ lý ảo - Health Care{% endblock %}
+
+{% block content %}
+<div class="row h-100">
+    <div class="col-12">
+        <div class="card h-100" style="min-height: 600px;">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-robot text-primary"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Trợ lý ảo Healthcare</h5>
+                        <small class="text-light">Luôn sẵn sàng hỗ trợ bạn 24/7</small>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-light btn-sm" onclick="clearChat()" title="Xóa lịch sử chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="toggleChatInfo()" title="Thông tin">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body d-flex flex-column p-0" style="height: 500px;">
+                <!-- Chat messages area -->
+                <div id="chatMessages" class="flex-grow-1 overflow-auto p-3" style="background-color: #f8f9fa;">
+                    <!-- Welcome message -->
+                    <div class="chat-message bot-message mb-3">
+                        <div class="d-flex align-items-start">
+                            <div class="avatar me-2">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    <i class="fas fa-robot text-white"></i>
+                                </div>
+                            </div>
+                            <div class="message-content">
+                                <div class="bg-white rounded p-3 shadow-sm">
+                                    <p class="mb-0">
+                                        Xin chào! Tôi là trợ lý ảo của hệ thống chăm sóc sức khỏe. 
+                                        Tôi có thể giúp bạn đặt lịch hẹn, tư vấn triệu chứng, và trả lời các câu hỏi về y tế.
+                                    </p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> Vừa xong
+                                    </small>
+                                </div>
+                                <div class="quick-replies mt-2">
+                                    <button class="btn btn-outline-primary btn-sm me-1 mb-1" onclick="sendQuickMessage('Đặt lịch hẹn')">
+                                        <i class="fas fa-calendar-plus"></i> Đặt lịch hẹn
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm me-1 mb-1" onclick="sendQuickMessage('Tư vấn triệu chứng')">
+                                        <i class="fas fa-stethoscope"></i> Tư vấn triệu chứng
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm me-1 mb-1" onclick="sendQuickMessage('Câu hỏi thường gặp')">
+                                        <i class="fas fa-question-circle"></i> FAQ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Typing indicator -->
+                <div id="typingIndicator" class="px-3 py-2" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar me-2">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                        </div>
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Message input area -->
+                <div class="border-top p-3">
+                    <form id="chatForm" class="d-flex align-items-center">
+                        <div class="flex-grow-1 me-2">
+                            <input type="text" 
+                                   id="messageInput" 
+                                   class="form-control" 
+                                   placeholder="Nhập tin nhắn của bạn..." 
+                                   autocomplete="off"
+                                   maxlength="1000">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="sendButton">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    
+                    <!-- Quick action buttons -->
+                    <div class="mt-2">
+                        <button class="btn btn-outline-secondary btn-sm me-1" onclick="showEmergencyInfo()">
+                            <i class="fas fa-exclamation-triangle text-danger"></i> Cấp cứu
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm me-1" onclick="showDoctorsList()">
+                            <i class="fas fa-user-md"></i> Danh sách BS
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="provideFeedback()">
+                            <i class="fas fa-star"></i> Đánh giá
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Info Modal -->
+<div class="modal fade" id="chatInfoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle"></i> Thông tin trợ lý ảo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Tôi có thể giúp bạn:</h6>
+                <ul>
+                    <li>🗓️ Đặt lịch hẹn với bác sĩ</li>
+                    <li>🩺 Tư vấn triệu chứng sức khỏe cơ bản</li>
+                    <li>❓ Trả lời câu hỏi về y tế</li>
+                    <li>🏥 Hướng dẫn sử dụng hệ thống</li>
+                    <li>🚨 Thông tin cấp cứu</li>
+                </ul>
+                
+                <div class="alert alert-warning">
+                    <strong>Lưu ý:</strong> Thông tin từ chatbot chỉ mang tính tham khảo. 
+                    Vui lòng tham khảo ý kiến bác sĩ để được chẩn đoán và điều trị chính xác.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-star"></i> Đánh giá trợ lý ảo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label class="form-label">Đánh giá của bạn:</label>
+                        <div class="rating-stars">
+                            <input type="radio" name="rating" value="5" id="star5">
+                            <label for="star5">⭐</label>
+                            <input type="radio" name="rating" value="4" id="star4">
+                            <label for="star4">⭐</label>
+                            <input type="radio" name="rating" value="3" id="star3">
+                            <label for="star3">⭐</label>
+                            <input type="radio" name="rating" value="2" id="star2">
+                            <label for="star2">⭐</label>
+                            <input type="radio" name="rating" value="1" id="star1">
+                            <label for="star1">⭐</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Ý kiến đóng góp:</label>
+                        <textarea class="form-control" name="comment" rows="3" 
+                                  placeholder="Chia sẻ ý kiến của bạn về trợ lý ảo..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="submitFeedback()">Gửi đánh giá</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Chat message styles */
+.chat-message {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.user-message .message-content {
+    text-align: right;
+}
+
+.user-message .bg-primary {
+    color: white;
+}
+
+.quick-replies .btn {
+    transition: all 0.2s ease;
+}
+
+.quick-replies .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Typing indicator */
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+}
+
+.typing-dots span {
+    height: 8px;
+    width: 8px;
+    background-color: #007bff;
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: typing 1.4s infinite both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Rating stars */
+.rating-stars {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.rating-stars input {
+    display: none;
+}
+
+.rating-stars label {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-stars label:hover,
+.rating-stars label:hover ~ label,
+.rating-stars input:checked ~ label {
+    color: #ffc107;
+}
+
+/* Scrollbar */
+#chatMessages::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+
+<script>
+// Global variables
+let currentSessionId = null;
+let isWaitingForResponse = false;
+
+// Initialize chat when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+    
+    // Focus on input
+    document.getElementById('messageInput').focus();
+    
+    // Handle form submission
+    document.getElementById('chatForm').addEventListener('submit', handleMessageSubmit);
+    
+    // Handle Enter key
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleMessageSubmit(e);
+        }
+    });
+});
+
+// Handle message submission
+function handleMessageSubmit(e) {
+    e.preventDefault();
+    
+    if (isWaitingForResponse) {
+        return;
+    }
+    
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message) {
+        return;
+    }
+    
+    // Clear input
+    messageInput.value = '';
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    
+    // Send to backend
+    sendMessageToBot(message);
+}
+
+// Add message to chat interface
+function addMessageToChat(sender, content, metadata = {}) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender}-message mb-3`;
+    
+    const timestamp = new Date().toLocaleTimeString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    if (sender === 'user') {
+        messageDiv.innerHTML = `
+            <div class="d-flex align-items-start justify-content-end">
+                <div class="message-content">
+                    <div class="bg-primary text-white rounded p-3 shadow-sm">
+                        <p class="mb-0">${content}</p>
+                        <small class="text-light">
+                            <i class="fas fa-clock"></i> ${timestamp}
+                        </small>
+                    </div>
+                </div>
+                <div class="avatar ms-2">
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        let quickRepliesHtml = '';
+        if (metadata.quick_replies && metadata.quick_replies.length > 0) {
+            quickRepliesHtml = '<div class="quick-replies mt-2">';
+            metadata.quick_replies.forEach(reply => {
+                quickRepliesHtml += `<button class="btn btn-outline-primary btn-sm me-1 mb-1" onclick="sendQuickMessage('${reply}')">${reply}</button>`;
+            });
+            quickRepliesHtml += '</div>';
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="avatar me-2">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                        <i class="fas fa-robot text-white"></i>
+                    </div>
+                </div>
+                <div class="message-content">
+                    <div class="bg-white rounded p-3 shadow-sm">
+                        <p class="mb-0">${content.replace(/\n/g, '<br>')}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> ${timestamp}
+                        </small>
+                    </div>
+                    ${quickRepliesHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// Send message to bot
+async function sendMessageToBot(message) {
+    if (isWaitingForResponse) return;
+    
+    isWaitingForResponse = true;
+    showTypingIndicator();
+    
+    try {
+        const response = await fetch('{% url "chatbot:chat_api" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentSessionId = data.session_id;
+            hideTypingIndicator();
+            
+            // Add bot response
+            addMessageToChat('bot', data.bot_message.content, data.bot_message.metadata);
+            
+        } else {
+            hideTypingIndicator();
+            addMessageToChat('bot', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        hideTypingIndicator();
+        addMessageToChat('bot', 'Không thể kết nối đến server. Vui lòng thử lại.');
+    }
+    
+    isWaitingForResponse = false;
+}
+
+// Send quick message
+function sendQuickMessage(message) {
+    if (isWaitingForResponse) return;
+    
+    addMessageToChat('user', message);
+    sendMessageToBot(message);
+}
+
+// Show/hide typing indicator
+function showTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'block';
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'none';
+}
+
+// Scroll to bottom of chat
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Load chat history
+async function loadChatHistory() {
+    try {
+        const response = await fetch('{% url "chatbot:chat_history" %}');
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+            // Clear welcome message
+            document.getElementById('chatMessages').innerHTML = '';
+            
+            data.messages.forEach(msg => {
+                if (msg.sender !== 'system') {
+                    addMessageToChat(msg.sender, msg.content, msg.metadata);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
+// Clear chat
+function clearChat() {
+    if (confirm('Bạn có muốn xóa toàn bộ lịch sử chat không?')) {
+        document.getElementById('chatMessages').innerHTML = `
+            <div class="chat-message bot-message mb-3">
+                <div class="d-flex align-items-start">
+                    <div class="avatar me-2">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                            <i class="fas fa-robot text-white"></i>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        <div class="bg-white rounded p-3 shadow-sm">
+                            <p class="mb-0">
+                                Xin chào! Tôi là trợ lý ảo của hệ thống chăm sóc sức khỏe. 
+                                Tôi có thể giúp bạn đặt lịch hẹn, tư vấn triệu chứng, và trả lời các câu hỏi về y tế.
+                            </p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> Vừa xong
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        currentSessionId = null;
+    }
+}
+
+// Toggle chat info modal
+function toggleChatInfo() {
+    const modal = new bootstrap.Modal(document.getElementById('chatInfoModal'));
+    modal.show();
+}
+
+// Show emergency info
+function showEmergencyInfo() {
+    sendQuickMessage('Cấp cứu');
+}
+
+// Show doctors list
+function showDoctorsList() {
+    sendQuickMessage('Danh sách bác sĩ');
+}
+
+// Provide feedback
+function provideFeedback() {
+    if (!currentSessionId) {
+        alert('Vui lòng chat với bot trước khi đánh giá.');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    modal.show();
+}
+
+// Submit feedback
+async function submitFeedback() {
+    const rating = document.querySelector('input[name="rating"]:checked');
+    const comment = document.querySelector('textarea[name="comment"]').value;
+    
+    if (!rating) {
+        alert('Vui lòng chọn đánh giá sao.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "chatbot:chat_feedback" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_id: currentSessionId,
+                rating: rating.value,
+                comment: comment
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Cảm ơn bạn đã đóng góp ý kiến!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
+            modal.hide();
+            
+            // Reset form
+            document.getElementById('feedbackForm').reset();
+        }
+        
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        alert('Có lỗi xảy ra khi gửi đánh giá.');
+    }
+}
+</script>
+{% endblock %}

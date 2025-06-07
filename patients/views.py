@@ -13,9 +13,13 @@ def patient_dashboard(request):
         return redirect('home')
     
     patient = get_object_or_404(Patient, user=request.user)
-    appointments = Appointment.objects.filter(patient=patient)[:5]
-    upcoming_appointments = appointments.filter(status__in=['pending', 'confirmed']).count()
-    questions = Question.objects.filter(patient=patient)[:5]
+    
+    # Sửa lỗi: Phải lấy toàn bộ appointments trước, sau đó filter và slice riêng biệt
+    all_appointments = Appointment.objects.filter(patient=patient).order_by('-created_at')
+    appointments = all_appointments[:5]  # Lấy 5 appointments gần nhất để hiển thị
+    upcoming_appointments = all_appointments.filter(status__in=['pending', 'confirmed']).count()  # Đếm upcoming từ toàn bộ appointments
+    
+    questions = Question.objects.filter(patient=patient).order_by('-created_at')[:5]
     
     context = {
         'patient': patient,
@@ -31,7 +35,7 @@ def patient_appointments(request):
         return redirect('home')
     
     patient = get_object_or_404(Patient, user=request.user)
-    appointments = Appointment.objects.filter(patient=patient)
+    appointments = Appointment.objects.filter(patient=patient).order_by('-created_at')
     
     return render(request, 'patients/appointments.html', {
         'appointments': appointments

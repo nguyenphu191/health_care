@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý Chatbot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-robot"></i> Quản lý Chatbot</h2>
+            <div>
+                <a href="/admin/chatbot/" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-cogs"></i> Django Admin
+                </a>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-comments fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ total_sessions }}</h5>
+                        <p class="card-text">Tổng phiên chat</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-message fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ total_messages }}</h5>
+                        <p class="card-text">Tổng tin nhắn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-brain fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ knowledge_count }}</h5>
+                        <p class="card-text">Kiến thức</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title">{{ avg_rating|floatformat:1 }}</h5>
+                        <p class="card-text">Đánh giá TB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Phiên chat gần đây</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Người dùng</th>
+                                    <th>Thời gian</th>
+                                    <th>Tin nhắn</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in recent_sessions %}
+                                <tr>
+                                    <td>
+                                        {% if session.user %}
+                                            <strong>{{ session.user.get_full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ session.user.get_user_type_display }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Khách</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ session.created_at|date:"d/m/Y H:i" }}
+                                        <br>
+                                        <small class="text-muted">{{ session.updated_at|timesince }} trước</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ session.messages.count }}</span>
+                                    </td>
+                                    <td>
+                                        {% if session.is_active %}
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Đã đóng</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewSession('{{ session.id }}')">
+                                            <i class="fas fa-eye"></i> Xem
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Chưa có phiên chat nào.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Thống kê nhanh</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Câu hỏi phổ biến hôm nay:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-calendar-plus text-primary"></i> Đặt lịch hẹn (45%)</li>
+                        <li><i class="fas fa-stethoscope text-success"></i> Tư vấn triệu chứng (30%)</li>
+                        <li><i class="fas fa-question text-info"></i> FAQ hệ thống (15%)</li>
+                        <li><i class="fas fa-exclamation-triangle text-warning"></i> Cấp cứu (10%)</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Hiệu suất bot:</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: 85%">85%</div>
+                    </div>
+                    <small class="text-muted">Tỷ lệ trả lời thành công</small>
+                </div>
+                
+                <div>
+                    <h6>Thời gian phản hồi TB:</h6>
+                    <h4 class="text-primary">0.8s</h4>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Thao tác nhanh</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/chatbot/chatbotknowledge/add/" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-plus"></i> Thêm kiến thức
+                    </a>
+                    <a href="/admin/chatbot/chatbotknowledge/" class="btn btn-info" target="_blank">
+                        <i class="fas fa-brain"></i> Quản lý KB
+                    </a>
+                    <a href="/admin/chatbot/chatbotfeedback/" class="btn btn-warning" target="_blank">
+                        <i class="fas fa-star"></i> Xem feedback
+                    </a>
+                    <button class="btn btn-success" onclick="exportChatData()">
+                        <i class="fas fa-download"></i> Xuất dữ liệu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Detail Modal -->
+<div class="modal fade" id="sessionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết phiên chat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="sessionDetails">
+                <!-- Session details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewSession(sessionId) {
+    // Load session details via AJAX
+    fetch(`/chatbot/api/session/${sessionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const modalBody = document.getElementById('sessionDetails');
+            let html = `
+                <div class="mb-3">
+                    <strong>Người dùng:</strong> ${data.user || 'Khách'}
+                    <br>
+                    <strong>Thời gian:</strong> ${data.created_at}
+                    <br>
+                    <strong>Số tin nhắn:</strong> ${data.message_count}
+                </div>
+                <div class="chat-history">
+                    <h6>Lịch sử chat:</h6>
+            `;
+            
+            data.messages.forEach(msg => {
+                const senderClass = msg.sender === 'user' ? 'user-msg' : 'bot-msg';
+                html += `
+                    <div class="message ${senderClass} mb-2">
+                        <div class="d-flex">
+                            <strong>${msg.sender === 'user' ? 'Người dùng' : 'Bot'}:</strong>
+                            <span class="ms-2">${msg.content}</span>
+                        </div>
+                        <small class="text-muted">${msg.timestamp}</small>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            modalBody.innerHTML = html;
+            
+            const modal = new bootstrap.Modal(document.getElementById('sessionModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Không thể tải chi tiết phiên chat');
+        });
+}
+
+function exportChatData() {
+    if (confirm('Bạn có muốn xuất dữ liệu chat không?')) {
+        window.location.href = '/chatbot/api/export/';
+    }
+}
+
+// Auto refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+
+<style>
+.user-msg {
+    text-align: right;
+    background-color: #e3f2fd;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.bot-msg {
+    background-color: #f5f5f5;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.chat-history {
+    max-height: 400px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}

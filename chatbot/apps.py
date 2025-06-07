@@ -1,0 +1,11 @@
+from django.apps import AppConfig
+
+
+class ChatbotConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'chatbot'
+    verbose_name = 'Chatbot System'
+    
+    def ready(self):
+        # Import signals if needed
+        pass

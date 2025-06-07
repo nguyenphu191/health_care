@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'patients',
     'appointments',
     'qa_system',
+    'chatbot',  # Thêm chatbot app
 ]
 
 MIDDLEWARE = [
@@ -107,7 +108,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 # Authentication settings
 AUTH_USER_MODEL = 'accounts.User'
 
-# Login/Logout URLs - Sửa lại để fix lỗi logout
+# Login/Logout URLs
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
@@ -115,3 +116,33 @@ LOGOUT_REDIRECT_URL = '/'
 # Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Cấu hình cho Chatbot (tùy chọn)
+CHATBOT_SETTINGS = {
+    'MAX_MESSAGE_LENGTH': 1000,
+    'MAX_SESSIONS_PER_USER': 5,
+    'SESSION_TIMEOUT_HOURS': 24,
+    'ENABLE_ANALYTICS': True,
+    'DEFAULT_LANGUAGE': 'vi',
+    'ENABLE_FEEDBACK': True,
+}
+
+# Logging configuration (tùy chọn)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'chatbot.log',
+        },
+    },
+    'loggers': {
+        'chatbot': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

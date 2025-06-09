@@ -1,6 +1,9 @@
 from django.contrib import admin
-from .models import ChatSession, ChatMessage, ChatbotKnowledge, ChatbotIntent, ChatbotFeedback, ChatbotAnalytics
-
+from .models import (
+    ChatSession, ChatMessage, ChatbotKnowledge, ChatbotIntent, 
+    ChatbotFeedback, ChatbotAnalytics,
+    Symptom, Disease, DiseaseSymptom, DiseasePrediction, PredictionFeedback
+)
 @admin.register(ChatSession)
 class ChatSessionAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'created_at', 'updated_at', 'is_active', 'message_count')
@@ -72,3 +75,144 @@ class ChatbotAnalyticsAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+@admin.register(Symptom)
+class SymptomAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'severity_weight', 'is_active', 'created_at')
+    list_filter = ('category', 'is_active', 'severity_weight', 'created_at')
+    search_fields = ('name', 'description')
+    list_editable = ('severity_weight', 'is_active')
+    ordering = ['category', 'name']
+    
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('name', 'description', 'category')
+        }),
+        ('Cấu hình', {
+            'fields': ('severity_weight', 'is_active')
+        }),
+    )
+
+@admin.register(Disease)
+class DiseaseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'severity_level', 'symptom_count', 'is_active', 'created_at')
+    list_filter = ('category', 'severity_level', 'is_active', 'created_at')
+    search_fields = ('name', 'description', 'treatment_advice')
+    list_editable = ('is_active',)
+    
+    fieldsets = (
+        ('Thông tin bệnh', {
+            'fields': ('name', 'description', 'category', 'severity_level')
+        }),
+        ('Thông tin y tế', {
+            'fields': ('treatment_advice', 'when_to_see_doctor', 'prevention_tips')
+        }),
+        ('Cấu hình', {
+            'fields': ('is_active',)
+        }),
+    )
+    
+    def symptom_count(self, obj):
+        return obj.symptoms.count()
+    symptom_count.short_description = 'Số triệu chứng'
+
+class DiseaseSymptomInline(admin.TabularInline):
+    model = DiseaseSymptom
+    extra = 1
+    fields = ('symptom', 'probability', 'is_primary')
+
+@admin.register(DiseaseSymptom)
+class DiseaseSymptomAdmin(admin.ModelAdmin):
+    list_display = ('disease', 'symptom', 'probability', 'is_primary')
+    list_filter = ('is_primary', 'probability', 'disease__category', 'symptom__category')
+    search_fields = ('disease__name', 'symptom__name')
+    list_editable = ('probability', 'is_primary')
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('disease', 'symptom')
+
+@admin.register(DiseasePrediction)
+class DiseasePredictionAdmin(admin.ModelAdmin):
+    list_display = ('session_user', 'symptom_list', 'top_prediction', 'confidence_score', 
+                   'user_feedback', 'doctor_verified', 'created_at')
+    list_filter = ('user_feedback', 'doctor_verified', 'confidence_score', 'created_at')
+    search_fields = ('session__user__username', 'session__user__email')
+    readonly_fields = ('session', 'selected_symptoms', 'predicted_diseases', 
+                      'confidence_score', 'created_at')
+    
+    def session_user(self, obj):
+        return obj.session.user.get_full_name() if obj.session.user else "Anonymous"
+    session_user.short_description = 'Người dùng'
+    
+    def symptom_list(self, obj):
+        symptoms = obj.selected_symptoms.all()[:3]
+        result = ', '.join([s.name for s in symptoms])
+        if obj.selected_symptoms.count() > 3:
+            result += f' (+{obj.selected_symptoms.count() - 3} khác)'
+        return result
+    symptom_list.short_description = 'Triệu chứng'
+    
+    def top_prediction(self, obj):
+        if obj.predicted_diseases and len(obj.predicted_diseases) > 0:
+            top = obj.predicted_diseases[0]
+            return f"{top['disease']} ({top['probability']*100:.1f}%)"
+        return "Không có"
+    top_prediction.short_description = 'Dự đoán hàng đầu'
+
+@admin.register(PredictionFeedback)
+class PredictionFeedbackAdmin(admin.ModelAdmin):
+    list_display = ('prediction_user', 'accuracy_rating', 'has_actual_diagnosis', 
+                   'has_doctor_notes', 'created_at')
+    list_filter = ('accuracy_rating', 'created_at')
+    search_fields = ('prediction__session__user__username', 'actual_diagnosis', 'doctor_notes')
+    readonly_fields = ('prediction', 'created_at')
+    
+    def prediction_user(self, obj):
+        return obj.prediction.session.user.get_full_name() if obj.prediction.session.user else "Anonymous"
+    prediction_user.short_description = 'Người dùng'
+    
+    def has_actual_diagnosis(self, obj):
+        return bool(obj.actual_diagnosis)
+    has_actual_diagnosis.boolean = True
+    has_actual_diagnosis.short_description = 'Có chẩn đoán thực'
+    
+    def has_doctor_notes(self, obj):
+        return bool(obj.doctor_notes)
+    has_doctor_notes.boolean = True
+    has_doctor_notes.short_description = 'Có ghi chú BS'
+
+# Cập nhật DiseaseAdmin để include inline
+@admin.register(Disease)
+class DiseaseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'severity_level', 'symptom_count', 'is_active', 'created_at')
+    list_filter = ('category', 'severity_level', 'is_active', 'created_at')
+    search_fields = ('name', 'description', 'treatment_advice')
+    list_editable = ('is_active',)
+    inlines = [DiseaseSymptomInline]
+    
+    fieldsets = (
+        ('Thông tin bệnh', {
+            'fields': ('name', 'description', 'category', 'severity_level')
+        }),
+        ('Thông tin y tế', {
+            'fields': ('treatment_advice', 'when_to_see_doctor', 'prevention_tips')
+        }),
+        ('Cấu hình', {
+            'fields': ('is_active',)
+        }),
+    )
+    
+    def symptom_count(self, obj):
+        return obj.symptoms.count()
+    symptom_count.short_description = 'Số triệu chứng'
+
+# Custom admin actions
+@admin.action(description='Đánh dấu là đã được bác sĩ xác minh')
+def mark_doctor_verified(modeladmin, request, queryset):
+    queryset.update(doctor_verified=True)
+
+@admin.action(description='Đánh dấu là chưa được bác sĩ xác minh')  
+def mark_doctor_unverified(modeladmin, request, queryset):
+    queryset.update(doctor_verified=False)
+
+# Add actions to DiseasePredictionAdmin
+DiseasePredictionAdmin.actions = [mark_doctor_verified, mark_doctor_unverified]

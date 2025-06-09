@@ -11,7 +11,8 @@ from .models import ChatSession, ChatMessage, ChatbotFeedback
 from .services import ChatbotService
 from .forms import ChatbotFeedbackForm
 from doctors.models import Doctor, Specialization
-
+from .ml_models import DiseasePredictor
+from .models import Symptom, DiseasePrediction
 class ChatbotView(View):
     """Main chatbot interface"""
     
@@ -31,9 +32,13 @@ class ChatAPIView(View):
         try:
             data = json.loads(request.body)
             message_content = data.get('message', '').strip()
+            action_type = data.get('action_type', '')
+            selected_symptoms = data.get('selected_symptoms', [])
+            prediction_id = data.get('prediction_id', '')
+            feedback_data = data.get('feedback', {})
             
-            if not message_content:
-                return JsonResponse({'error': 'Message content is required'}, status=400)
+            if not message_content and not action_type:
+                return JsonResponse({'error': 'Message content or action is required'}, status=400)
             
             # Khởi tạo service
             chatbot_service = ChatbotService()
@@ -48,21 +53,56 @@ class ChatAPIView(View):
             
             session = chatbot_service.get_or_create_session(user=user, session_key=session_key)
             
-            # Xử lý tin nhắn
-            bot_response = chatbot_service.process_message(session, message_content)
+            # Xử lý các action types khác nhau
+            if action_type == 'symptom_selection':
+                bot_response = chatbot_service.handle_symptom_selection(session, selected_symptoms)
+            elif action_type == 'prediction_feedback':
+                success = chatbot_service.handle_prediction_feedback(
+                    prediction_id, 
+                    feedback_data.get('type', ''),
+                    feedback_data.get('comment', '')
+                )
+                return JsonResponse({'success': success})
+            elif action_type == 'quick_symptom':
+                bot_response = chatbot_service.handle_quick_symptom(message_content, session)
+            else:
+                # Xử lý tin nhắn thông thường
+                bot_response = chatbot_service.process_message(session, message_content)
             
-            # Trả về response
-            response_data = {
-                'success': True,
-                'bot_message': {
-                    'id': bot_response.id,
-                    'content': bot_response.content,
-                    'type': bot_response.message_type,
-                    'metadata': bot_response.metadata,
-                    'timestamp': bot_response.created_at.isoformat()
-                },
-                'session_id': str(session.id)
-            }
+            # Lưu response vào database nếu cần
+            if isinstance(bot_response, dict):
+                bot_message = ChatMessage.objects.create(
+                    session=session,
+                    sender='bot',
+                    message_type=bot_response.get('type', 'text'),
+                    content=bot_response.get('content', ''),
+                    metadata=bot_response.get('metadata', {})
+                )
+                
+                response_data = {
+                    'success': True,
+                    'bot_message': {
+                        'id': bot_message.id,
+                        'content': bot_message.content,
+                        'type': bot_message.message_type,
+                        'metadata': bot_message.metadata,
+                        'timestamp': bot_message.created_at.isoformat()
+                    },
+                    'session_id': str(session.id)
+                }
+            else:
+                # bot_response là ChatMessage object
+                response_data = {
+                    'success': True,
+                    'bot_message': {
+                        'id': bot_response.id,
+                        'content': bot_response.content,
+                        'type': bot_response.message_type,
+                        'metadata': bot_response.metadata,
+                        'timestamp': bot_response.created_at.isoformat()
+                    },
+                    'session_id': str(session.id)
+                }
             
             return JsonResponse(response_data)
             
@@ -70,7 +110,6 @@ class ChatAPIView(View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
 class ChatHistoryView(View):
     """Lấy lịch sử chat"""
     
@@ -287,3 +326,136 @@ def chatbot_admin_dashboard(request):
     }
     
     return render(request, 'chatbot/admin_dashboard.html', context)
+@method_decorator(csrf_exempt, name='dispatch')
+class DiseasePredictionView(View):
+    """API endpoint riêng cho disease prediction"""
+    
+    def post(self, request):
+        """Thực hiện dự đoán bệnh"""
+        try:
+            data = json.loads(request.body)
+            selected_symptoms = data.get('symptoms', [])
+            
+            if not selected_symptoms:
+                return JsonResponse({
+                    'error': 'No symptoms selected'
+                }, status=400)
+            
+            # Lấy session
+            user = request.user if request.user.is_authenticated else None
+            if not user:
+                return JsonResponse({
+                    'error': 'Authentication required'
+                }, status=401)
+            
+            session_key = request.session.session_key
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            
+            from .services import ChatbotService
+            chatbot_service = ChatbotService()
+            session = chatbot_service.get_or_create_session(user=user, session_key=session_key)
+            
+            # Thực hiện dự đoán
+            disease_predictor = DiseasePredictor()
+            result = disease_predictor.predict_from_symptoms(session, selected_symptoms)
+            
+            return JsonResponse(result)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    def get(self, request):
+        """Lấy danh sách triệu chứng"""
+        try:
+            disease_predictor = DiseasePredictor()
+            symptoms_by_category = disease_predictor.get_available_symptoms()
+            
+            return JsonResponse({
+                'symptoms_by_category': symptoms_by_category
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class PredictionHistoryView(View):
+    """Lịch sử dự đoán của người dùng"""
+    
+    @method_decorator(login_required, name='dispatch')
+    def get(self, request):
+        """Lấy lịch sử dự đoán"""
+        try:
+            predictions = DiseasePrediction.objects.filter(
+                session__user=request.user
+            ).order_by('-created_at')[:10]
+            
+            predictions_data = []
+            for pred in predictions:
+                symptoms = [s.name for s in pred.selected_symptoms.all()]
+                predictions_data.append({
+                    'id': pred.id,
+                    'symptoms': symptoms,
+                    'predictions': pred.predicted_diseases,
+                    'confidence': pred.confidence_score,
+                    'feedback': pred.user_feedback,
+                    'created_at': pred.created_at.isoformat()
+                })
+            
+            return JsonResponse({
+                'predictions': predictions_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class PredictionFeedbackView(View):
+    """API để gửi feedback về dự đoán"""
+    
+    @method_decorator(csrf_exempt, name='dispatch')
+    @method_decorator(login_required, name='dispatch')
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            prediction_id = data.get('prediction_id')
+            feedback_type = data.get('feedback_type')
+            rating = data.get('rating', 3)
+            comment = data.get('comment', '')
+            
+            if not prediction_id or not feedback_type:
+                return JsonResponse({
+                    'error': 'Prediction ID and feedback type required'
+                }, status=400)
+            
+            # Lấy prediction
+            prediction = DiseasePrediction.objects.get(
+                id=prediction_id,
+                session__user=request.user
+            )
+            
+            # Cập nhật feedback
+            prediction.user_feedback = feedback_type
+            prediction.save()
+            
+            # Tạo detailed feedback nếu có
+            if comment or rating != 3:
+                from .models import PredictionFeedback
+                PredictionFeedback.objects.update_or_create(
+                    prediction=prediction,
+                    defaults={
+                        'accuracy_rating': rating,
+                        'suggested_improvements': comment
+                    }
+                )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Cảm ơn bạn đã đóng góp ý kiến!'
+            })
+            
+        except DiseasePrediction.DoesNotExist:
+            return JsonResponse({
+                'error': 'Prediction not found'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

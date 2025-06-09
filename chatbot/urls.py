@@ -15,6 +15,11 @@ urlpatterns = [
     path('api/specializations/', views.ChatSpecializationsView.as_view(), name='chat_specializations'),
     path('api/quick-action/', views.QuickActionView.as_view(), name='quick_action'),
     
+    # Disease Prediction endpoints
+    path('api/disease-prediction/', views.DiseasePredictionView.as_view(), name='disease_prediction'),
+    path('api/prediction-history/', views.PredictionHistoryView.as_view(), name='prediction_history'),
+    path('api/prediction-feedback/', views.PredictionFeedbackView.as_view(), name='prediction_feedback'),
+    
     # Admin
     path('admin-dashboard/', views.chatbot_admin_dashboard, name='admin_dashboard'),
 ]

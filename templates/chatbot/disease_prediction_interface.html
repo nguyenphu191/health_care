@@ -1,0 +1,365 @@
+<!-- Disease Prediction Modal -->
+<div class="modal fade" id="diseasePredictionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-brain text-primary"></i> Dự đoán bệnh thông minh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Lưu ý:</strong> Đây chỉ là công cụ hỗ trợ, không thay thế chẩn đoán của bác sĩ.
+                </div>
+                
+                <!-- Symptom Selection -->
+                <div id="symptomSelection">
+                    <h6>Chọn các triệu chứng bạn đang gặp phải:</h6>
+                    <div id="symptomCategories">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>Triệu chứng đã chọn:</h6>
+                        <div id="selectedSymptoms" class="border rounded p-2 bg-light">
+                            <span class="text-muted">Chưa chọn triệu chứng nào</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Prediction Results -->
+                <div id="predictionResults" style="display: none;">
+                    <h6>Kết quả dự đoán:</h6>
+                    <div id="predictionContent"></div>
+                    
+                    <!-- Feedback Section -->
+                    <div class="mt-3">
+                        <h6>Đánh giá kết quả:</h6>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success" onclick="submitPredictionFeedback('helpful')">
+                                <i class="fas fa-thumbs-up"></i> Hữu ích
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="submitPredictionFeedback('somewhat')">
+                                <i class="fas fa-meh"></i> Tạm được
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="submitPredictionFeedback('not_helpful')">
+                                <i class="fas fa-thumbs-down"></i> Không hữu ích
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="predictDiseaseBtn" onclick="performDiseasePrediction()">
+                    <i class="fas fa-search"></i> Dự đoán bệnh
+                </button>
+                <button type="button" class="btn btn-success" id="bookAppointmentBtn" style="display: none;" onclick="bookAppointmentFromPrediction()">
+                    <i class="fas fa-calendar-plus"></i> Đặt lịch hẹn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.symptom-category {
+    margin-bottom: 20px;
+}
+
+.symptom-checkbox {
+    margin: 5px;
+}
+
+.symptom-item {
+    display: inline-block;
+    margin: 3px;
+}
+
+.symptom-item .form-check-input {
+    margin-right: 5px;
+}
+
+.selected-symptom {
+    display: inline-block;
+    background: #007bff;
+    color: white;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 15px;
+    font-size: 0.875rem;
+}
+
+.prediction-result {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.prediction-high {
+    border-left: 4px solid #28a745;
+}
+
+.prediction-medium {
+    border-left: 4px solid #ffc107;
+}
+
+.prediction-low {
+    border-left: 4px solid #dc3545;
+}
+
+.confidence-badge {
+    font-size: 0.875rem;
+    padding: 4px 8px;
+}
+</style>
+
+<script>
+let selectedSymptoms = [];
+let currentPredictionId = null;
+let symptomsData = {};
+
+// Load symptoms when modal opens
+$('#diseasePredictionModal').on('show.bs.modal', function() {
+    loadSymptoms();
+});
+
+async function loadSymptoms() {
+    try {
+        const response = await fetch('/chatbot/api/disease-prediction/');
+        const data = await response.json();
+        
+        if (data.symptoms_by_category) {
+            symptomsData = data.symptoms_by_category;
+            renderSymptomCategories();
+        }
+    } catch (error) {
+        console.error('Error loading symptoms:', error);
+        alert('Không thể tải danh sách triệu chứng');
+    }
+}
+
+function renderSymptomCategories() {
+    const container = document.getElementById('symptomCategories');
+    container.innerHTML = '';
+    
+    for (const [category, symptoms] of Object.entries(symptomsData)) {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'symptom-category';
+        
+        let html = `<h6 class="text-primary">${category}</h6><div class="row">`;
+        
+        symptoms.forEach(symptom => {
+            html += `
+                <div class="col-md-6 symptom-item">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${symptom.name}" 
+                               id="symptom_${symptom.id}" onchange="toggleSymptom('${symptom.name}')">
+                        <label class="form-check-label" for="symptom_${symptom.id}" title="${symptom.description}">
+                            ${symptom.name}
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        categoryDiv.innerHTML = html;
+        container.appendChild(categoryDiv);
+    }
+}
+
+function toggleSymptom(symptomName) {
+    const index = selectedSymptoms.indexOf(symptomName);
+    if (index > -1) {
+        selectedSymptoms.splice(index, 1);
+    } else {
+        selectedSymptoms.push(symptomName);
+    }
+    updateSelectedSymptomsDisplay();
+}
+
+function updateSelectedSymptomsDisplay() {
+    const container = document.getElementById('selectedSymptoms');
+    
+    if (selectedSymptoms.length === 0) {
+        container.innerHTML = '<span class="text-muted">Chưa chọn triệu chứng nào</span>';
+    } else {
+        let html = '';
+        selectedSymptoms.forEach(symptom => {
+            html += `<span class="selected-symptom">${symptom} <i class="fas fa-times" onclick="removeSymptom('${symptom}')" style="cursor: pointer;"></i></span>`;
+        });
+        container.innerHTML = html;
+    }
+    
+    // Enable/disable predict button
+    document.getElementById('predictDiseaseBtn').disabled = selectedSymptoms.length === 0;
+}
+
+function removeSymptom(symptomName) {
+    const checkbox = document.querySelector(`input[value="${symptomName}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+    toggleSymptom(symptomName);
+}
+
+async function performDiseasePrediction() {
+    if (selectedSymptoms.length === 0) {
+        alert('Vui lòng chọn ít nhất một triệu chứng');
+        return;
+    }
+    
+    const predictBtn = document.getElementById('predictDiseaseBtn');
+    predictBtn.disabled = true;
+    predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dự đoán...';
+    
+    try {
+        const response = await fetch('/chatbot/api/disease-prediction/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                symptoms: selectedSymptoms
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentPredictionId = data.prediction_id;
+            displayPredictionResults(data);
+        } else {
+            alert(data.message || 'Có lỗi xảy ra trong quá trình dự đoán');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể kết nối đến server');
+    } finally {
+        predictBtn.disabled = false;
+        predictBtn.innerHTML = '<i class="fas fa-search"></i> Dự đoán bệnh';
+    }
+}
+
+function displayPredictionResults(data) {
+    const resultsContainer = document.getElementById('predictionResults');
+    const contentContainer = document.getElementById('predictionContent');
+    
+    let html = '';
+    
+    if (data.predictions && data.predictions.length > 0) {
+        data.predictions.forEach((pred, index) => {
+            const confidenceClass = pred.confidence === 'high' ? 'prediction-high' : 
+                                  pred.confidence === 'medium' ? 'prediction-medium' : 'prediction-low';
+            const confidenceColor = pred.confidence === 'high' ? 'success' : 
+                                   pred.confidence === 'medium' ? 'warning' : 'danger';
+            
+            html += `
+                <div class="prediction-result ${confidenceClass}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${index + 1}. ${pred.disease}</h6>
+                            <div class="mb-2">
+                                <span class="badge bg-${confidenceColor} confidence-badge">
+                                    Xác suất: ${(pred.probability * 100).toFixed(1)}%
+                                </span>
+                                <span class="badge bg-secondary confidence-badge">
+                                    ${pred.confidence === 'high' ? 'Độ tin cậy cao' : 
+                                      pred.confidence === 'medium' ? 'Độ tin cậy trung bình' : 'Độ tin cậy thấp'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Overall confidence
+        const overallConfidence = data.confidence_score;
+        const confidenceText = overallConfidence > 0.7 ? 'Cao' : overallConfidence > 0.4 ? 'Trung bình' : 'Thấp';
+        const confidenceColor = overallConfidence > 0.7 ? 'success' : overallConfidence > 0.4 ? 'warning' : 'danger';
+        
+        html += `
+            <div class="alert alert-${confidenceColor}">
+                <strong>Độ tin cậy tổng thể: ${confidenceText} (${(overallConfidence * 100).toFixed(1)}%)</strong>
+                <br>
+                <small>⚠️ Kết quả này chỉ mang tính tham khảo. Vui lòng đặt lịch khám với bác sĩ để được chẩn đoán chính xác.</small>
+            </div>
+        `;
+    } else {
+        html = '<div class="alert alert-warning">Không thể xác định bệnh cụ thể với các triệu chứng đã chọn.</div>';
+    }
+    
+    contentContainer.innerHTML = html;
+    resultsContainer.style.display = 'block';
+    
+    // Show book appointment button
+    document.getElementById('bookAppointmentBtn').style.display = 'inline-block';
+    
+    // Add to chat
+    addPredictionToChat(data);
+}
+
+function addPredictionToChat(data) {
+    const message = `🔍 **Kết quả dự đoán bệnh:**\n\n${data.message}`;
+    addMessageToChat('bot', message, {
+        prediction_result: true,
+        prediction_id: data.prediction_id,
+        quick_replies: ['Đặt lịch hẹn', 'Dự đoán lại', 'Hỏi bác sĩ']
+    });
+}
+
+async function submitPredictionFeedback(feedbackType) {
+    if (!currentPredictionId) return;
+    
+    try {
+        const response = await fetch('/chatbot/api/prediction-feedback/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prediction_id: currentPredictionId,
+                feedback_type: feedbackType
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert('Cảm ơn bạn đã đóng góp ý kiến!');
+        }
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+    }
+}
+
+function bookAppointmentFromPrediction() {
+    // Hide modal and redirect to booking
+    $('#diseasePredictionModal').modal('hide');
+    
+    if (typeof addMessageToChat === 'function') {
+        addMessageToChat('user', 'Đặt lịch hẹn');
+        sendMessageToBot('Đặt lịch hẹn');
+    } else {
+        window.location.href = '/patients/book-appointment/';
+    }
+}
+
+// Reset modal when closed
+$('#diseasePredictionModal').on('hidden.bs.modal', function() {
+    selectedSymptoms = [];
+    currentPredictionId = null;
+    document.getElementById('predictionResults').style.display = 'none';
+    document.getElementById('bookAppointmentBtn').style.display = 'none';
+    updateSelectedSymptomsDisplay();
+    
+    // Uncheck all checkboxes
+    document.querySelectorAll('#symptomCategories input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+});
+</script>

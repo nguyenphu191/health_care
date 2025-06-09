@@ -1,0 +1,6 @@
+Model files not found
+Error training model: The least populated class in y has only 1 member, which is too few. The minimum number of groups for any class cannot be less than 2.
+Model trained with accuracy: 0.00
+Model saved successfully
+Model trained with accuracy: 0.00
+Model saved successfully

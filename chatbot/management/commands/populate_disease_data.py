@@ -7,7 +7,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Populating disease and symptom data...')
         
-        # Tạo symptoms
+        # Tạo symptoms - bao gồm cả những triệu chứng thiếu
         symptoms_data = [
             # General symptoms
             ('Sốt', 'Thân nhiệt trên 37.5°C', 'general', 2.0),
@@ -26,6 +26,7 @@ class Command(BaseCommand):
             ('Nghẹt mũi', 'Mũi bị tắc, khó thở qua mũi', 'respiratory', 1.0),
             ('Sổ mũi', 'Chảy nước mũi', 'respiratory', 1.0),
             ('Đau họng', 'Cảm giác đau khi nuốt', 'respiratory', 1.5),
+            ('Khó nuốt', 'Gặp khó khăn khi nuốt thức ăn', 'respiratory', 2.0),  # Thêm triệu chứng thiếu
             
             # Digestive symptoms
             ('Đau bụng', 'Cảm giác đau ở vùng bụng', 'digestive', 2.0),
@@ -46,11 +47,14 @@ class Command(BaseCommand):
             ('Đau khớp', 'Đau ở các khớp', 'musculoskeletal', 2.0),
             ('Cứng khớp', 'Khó cử động khớp', 'musculoskeletal', 2.0),
             ('Đau lưng', 'Đau ở vùng lưng', 'musculoskeletal', 1.5),
+            ('Sưng khớp', 'Khớp bị sưng phù', 'musculoskeletal', 2.5),  # Thêm triệu chứng thiếu
+            ('Hạn chế vận động', 'Khó khăn trong việc di chuyển', 'musculoskeletal', 2.0),  # Thêm triệu chứng thiếu
             
             # Dermatological symptoms
             ('Phát ban', 'Xuất hiện đốm đỏ trên da', 'dermatological', 1.5),
             ('Ngứa', 'Cảm giác ngứa trên da', 'dermatological', 1.0),
             ('Da vàng', 'Da có màu vàng', 'dermatological', 3.0),
+            ('Da nhợt nhạt', 'Da mất màu hồng tự nhiên', 'dermatological', 1.5),  # Thêm triệu chứng thiếu
             
             # Mental symptoms
             ('Lo âu', 'Cảm giác bất an, lo lắng', 'mental', 1.5),
@@ -71,7 +75,7 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f'Created symptom: {name}')
         
-        # Tạo diseases và liên kết với symptoms
+        # Tạo diseases và liên kết với symptoms (đã sửa)
         diseases_data = [
             {
                 'name': 'Cảm cúm',
